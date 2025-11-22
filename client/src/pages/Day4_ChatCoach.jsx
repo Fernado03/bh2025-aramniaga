@@ -146,9 +146,18 @@ const Day4_ChatCoach = () => {
             setFeedback(response.data);
 
             // Update progress if grade is good
+            // Update progress if grade is good
             if (['A', 'B', 'C'].includes(response.data.grade)) {
-                await userAPI.updateProgress(4);
-                updateUser({ progress: Math.max(user.progress, 5) });
+                const progressResponse = await userAPI.updateProgress(4);
+
+                // Update local user context with ALL new data from backend
+                updateUser({
+                    completedDays: progressResponse.data.completedDays,
+                    currentDay: progressResponse.data.currentDay,
+                    stats: progressResponse.data.stats,
+                    badges: progressResponse.data.badges,
+                    day4Result: response.data // Save the result locally too
+                });
             }
 
         } catch (error) {
@@ -292,12 +301,24 @@ const Day4_ChatCoach = () => {
                                     </div>
                                 )}
                                 <div className="feedback-actions">
-                                    <button className="reset-button" onClick={handleReset}>
-                                        🔄 Cuba Lagi
-                                    </button>
-                                    <button className="new-scenario-button" onClick={handleChangeScenario}>
-                                        Situasi Lain
-                                    </button>
+                                    {['A', 'B', 'C'].includes(feedback.grade) ? (
+                                        <button
+                                            className="action-button"
+                                            onClick={() => navigate('/dashboard')}
+                                            style={{ width: '100%', backgroundColor: '#10b981' }}
+                                        >
+                                            ✅ Selesai & Ke Dashboard
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button className="reset-button" onClick={handleReset}>
+                                                🔄 Cuba Lagi
+                                            </button>
+                                            <button className="new-scenario-button" onClick={handleChangeScenario}>
+                                                Situasi Lain
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}

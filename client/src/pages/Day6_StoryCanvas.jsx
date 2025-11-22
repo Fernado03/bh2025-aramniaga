@@ -183,8 +183,15 @@ const Day6_StoryCanvas = () => {
                 setEvaluationResult(result.data);
 
                 // Unlock Day 7
-                await userAPI.updateProgress(6);
-                updateUser({ progress: Math.max(user.progress, 6) });
+                const progressResponse = await userAPI.updateProgress(6);
+                updateUser({
+                    progress: Math.max(user.progress, 7),
+                    completedDays: progressResponse.data.completedDays,
+                    currentDay: progressResponse.data.currentDay,
+                    stats: progressResponse.data.stats,
+                    badges: progressResponse.data.badges,
+                    day6Result: result.data
+                });
 
                 setShowEvaluation(true);
             } catch (error) {
@@ -207,8 +214,14 @@ const Day6_StoryCanvas = () => {
                 link.href = canvas.toDataURL();
                 link.click();
 
-                await userAPI.updateProgress(6);
-                updateUser({ progress: Math.max(user.progress, 7) });
+                const progressResponse = await userAPI.updateProgress(6);
+                updateUser({
+                    progress: Math.max(user.progress, 7),
+                    completedDays: progressResponse.data.completedDays,
+                    currentDay: progressResponse.data.currentDay,
+                    stats: progressResponse.data.stats,
+                    badges: progressResponse.data.badges
+                });
                 setShowEvaluation(false);
             }, 100);
         }

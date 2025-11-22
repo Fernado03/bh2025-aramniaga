@@ -7,9 +7,21 @@ const { SABAHAN_SYSTEM_INSTRUCTION } = require('../config/sabahan-prompt');
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
-const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-1.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3-pro-preview';
+const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash-image';
 const GEMINI_FAST_MODEL = process.env.GEMINI_FAST_MODEL || 'gemini-2.5-flash';
+
+// Helper function for retrying API calls
+const retry = async (fn, retries = 3, delay = 1000) => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    console.log(`Retrying... attempts left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retry(fn, retries - 1, delay * 2);
+  }
+};
 
 // ... (previous routes remain unchanged) ...
 
@@ -83,7 +95,7 @@ router.post('/chat-customer', protect, async (req, res) => {
     console.error('Error in chat customer:', error);
     // Fallback to standard model if fast model fails (e.g. if 2.5 not available)
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
       const result = await model.generateContent(`Act as a customer. Reply to: ${req.body.userMessage}`);
       res.json({ reply: result.response.text() });
     } catch (fallbackError) {
@@ -269,7 +281,7 @@ router.post('/generate-hashtags', protect, async (req, res) => {
 Hashtag boleh ada English sikit, tapi kalau ada perkataan Malay lagi bagus.
 JSON: ["#tag1", "#tag2", ...]`;
 
-    const result = await model.generateContent(prompt);
+    const result = await retry(() => model.generateContent(prompt));
     const response = await result.response;
     let text = response.text();
 
@@ -475,6 +487,84 @@ router.post('/evaluate-story', protect, async (req, res) => {
     console.error('Error evaluating story:', error);
     res.status(500).json({
       message: 'Failed to evaluate story',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/ai/analyze-image
+// @desc    Analyze image and generate captions
+// @access  Private
+router.post('/analyze-image', protect, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ message: 'Please provide an image' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
+
+    const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
+
+    Tugas: Analisis gambar ini untuk tujuan marketing media sosial.
+    
+    Arahan:
+    1. Berikan GRED (A/B/C/D/F) untuk kualiti gambar.
+    2. Berikan komen ringkas tentang kualiti gambar (pencahayaan, angle, dll).
+    3. Cadangkan 3 caption yang menarik untuk posting media sosial (Instagram/Facebook) IKUT SUSUNAN INI:
+       - Caption 1: Gaya Santai (Casual/Rileks)
+       - Caption 2: Soft Sell (Bercerita/Mendidik)
+       - Caption 3: Hard Sell (Direct offer/Promo)
+    5. PENTING: JANGAN letak hashtag (#) dalam caption. Hashtag akan diletakkan di bahagian lain.
+    
+    Output JSON SAHAJA:
+    {
+      "grade": "A/B/C/D/F",
+      "feedback": "Komen tentang gambar...",
+      "captions": ["Caption 1...", "Caption 2...", "Caption 3..."]
+    }`;
+
+    // Remove header from base64 string if present
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+    const imageParts = [
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/png",
+        },
+      },
+    ];
+
+    const result = await retry(() => model.generateContent([prompt, ...imageParts]));
+    const response = await result.response;
+    let text = response.text();
+    console.log('Analyze Image Raw Output:', text); // Debug log
+
+    let analysis;
+    try {
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      analysis = JSON.parse(text);
+      console.log('Parsed Analysis:', analysis); // Debug log
+    } catch (parseError) {
+      console.error('JSON Parse Error:', parseError); // Debug log
+      analysis = {
+        grade: 'B',
+        feedback: 'Gambar yang menarik! Pencahayaan nampak okay.',
+        captions: [
+          'Check out this amazing product! ✨',
+          'Barang baik punya! Dapatkan sekarang. 🔥',
+          'Quality terbaik untuk anda. Hubungi kami segera! 📞'
+        ]
+      };
+    }
+
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing image:', error);
+    res.status(500).json({
+      message: 'Failed to analyze image',
       error: error.message
     });
   }

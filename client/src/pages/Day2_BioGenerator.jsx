@@ -24,6 +24,28 @@ const Day2_BioGenerator = () => {
         }
     }, [user?.bio]);
 
+    const [loadingMessage, setLoadingMessage] = useState('Menganalisis bisnes anda...');
+
+    // Loading message cycle
+    React.useEffect(() => {
+        let interval;
+        if (loading) {
+            const messages = [
+                'Menganalisis bisnes anda...',
+                'Menjana idea kreatif...',
+                'Menyusun ayat yang menarik...',
+                'Sedikit lagi...'
+            ];
+            let i = 0;
+            setLoadingMessage(messages[0]);
+            interval = setInterval(() => {
+                i = (i + 1) % messages.length;
+                setLoadingMessage(messages[i]);
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [loading]);
+
     const handleGenerate = async () => {
         setLoading(true);
         try {
@@ -35,11 +57,7 @@ const Day2_BioGenerator = () => {
             });
             setGeneratedBios(response.data.bios || []);
             setCurrentBioIndex(0);
-            await userAPI.updateProgress(2);
-            updateUser({
-                progress: Math.max(user.progress, 3),
-                bio: currentBio
-            });
+            // Don't complete yet, let user select first
         } catch (error) {
             console.error('Error generating bio:', error);
             enqueueSnackbar('Maaf, ada masalah. Sila cuba lagi.', { variant: 'error' });
@@ -48,9 +66,36 @@ const Day2_BioGenerator = () => {
         }
     };
 
-    const handleSelectBio = (bio) => {
+    const handleSelectBio = async (bio) => {
         setSelectedBio(bio);
-        enqueueSnackbar('Bio Telah Dipilih! Klik butang "Salin" untuk copy.', { variant: 'success' });
+
+        try {
+            // Save the selected bio
+            await userAPI.updateProfile({ bio });
+
+            // Mark Day 2 as complete and get updated data
+            const progressResponse = await userAPI.updateProgress(2);
+
+            // Update local user context with ALL new data from backend
+            updateUser({
+                bio,
+                completedDays: progressResponse.data.completedDays,
+                currentDay: progressResponse.data.currentDay,
+                stats: progressResponse.data.stats,
+                badges: progressResponse.data.badges
+            });
+
+            enqueueSnackbar('Bio berjaya disimpan! Tahniah!', { variant: 'success' });
+
+            // Redirect to dashboard after short delay
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error saving bio:', error);
+            enqueueSnackbar('Gagal menyimpan bio. Sila cuba lagi.', { variant: 'error' });
+        }
     };
 
     const handleCopyBio = (bio) => {
@@ -124,7 +169,7 @@ const Day2_BioGenerator = () => {
                         {loading && (
                             <div className="textarea-loading-overlay">
                                 <div className="loading-spinner"></div>
-                                <p>AI sedang menulis bio...</p>
+                                <p>{loadingMessage}</p>
                             </div>
                         )}
                     </div>
@@ -194,7 +239,7 @@ const Day2_BioGenerator = () => {
                                                 ✏️ Edit
                                             </button>
                                             <button
-                                                className="action-button select-button"
+                                                className={`action-button select-button ${selectedBio === generatedBios[currentBioIndex] ? 'selected' : ''}`}
                                                 onClick={() => handleSelectBio(generatedBios[currentBioIndex])}
                                             >
                                                 {selectedBio === generatedBios[currentBioIndex] ? '✓ Dipilih' : 'Pilih Ini'}

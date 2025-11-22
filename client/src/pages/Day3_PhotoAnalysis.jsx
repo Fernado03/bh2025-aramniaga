@@ -43,8 +43,7 @@ const Day3_PhotoAnalysis = () => {
             setCaptions(response.data.captions || []);
             setCurrentCaptionIndex(0);
 
-            await userAPI.updateProgress(3);
-            updateUser({ progress: Math.max(user.progress, 4) });
+            // Don't complete yet, let user choose/copy a caption first
         } catch (error) {
             console.error('Error analyzing image:', error);
             alert('Maaf, ada masalah. Sila cuba lagi.');
@@ -63,10 +62,33 @@ const Day3_PhotoAnalysis = () => {
         setCurrentCaptionIndex((prev) => (prev - 1 + captions.length) % captions.length);
     };
 
-    const copyToClipboard = (text) => {
+    const copyToClipboard = async (text) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+
+        try {
+            // Mark Day 3 as complete and get updated data
+            const progressResponse = await userAPI.updateProgress(3);
+
+            // Update local user context with ALL new data from backend
+            updateUser({
+                completedDays: progressResponse.data.completedDays,
+                currentDay: progressResponse.data.currentDay,
+                stats: progressResponse.data.stats,
+                badges: progressResponse.data.badges
+            });
+
+            // Show success message
+            setTimeout(() => setCopied(false), 2000);
+
+            // Redirect to dashboard
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error updating progress:', error);
+        }
     };
 
     return (
@@ -139,7 +161,10 @@ const Day3_PhotoAnalysis = () => {
                 {analysis && (
                     <div className="results-section">
                         <div className="feedback-card">
-                            <h3 className="feedback-title">� Analisis AI</h3>
+                            <div className="feedback-header">
+                                <div className="grade-circle">{analysis.grade || 'B'}</div>
+                                <h3 className="feedback-title">Analisis AI</h3>
+                            </div>
                             <p className="feedback-text">{analysis.feedback}</p>
                         </div>
 

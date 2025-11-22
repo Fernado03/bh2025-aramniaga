@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSnackbar } from 'notistack';
 import technologyImage from '../assets/technology.jpg';
+import logoImage from '../assets/logo.jpeg';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -113,12 +114,7 @@ const Dashboard = () => {
             <div className="dashboard-top-header">
                 <div className="header-logo-section">
                     <div className="header-logo">
-                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 4L18 8L14 12L10 8L14 4Z" fill="white" opacity="0.9" />
-                            <path d="M8 10L12 14L8 18L4 14L8 10Z" fill="white" opacity="0.7" />
-                            <path d="M20 10L24 14L20 18L16 14L20 10Z" fill="white" opacity="0.7" />
-                            <path d="M14 16L18 20L14 24L10 20L14 16Z" fill="white" />
-                        </svg>
+                        <img src={logoImage} alt="AramNiaga Logo" style={{ width: '28px', height: '28px' }} />
                     </div>
                     <div className="header-title-section">
                         <h1 className="header-title">AramNiaga</h1>

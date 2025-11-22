@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSnackbar } from 'notistack';
 import { aiAPI, userAPI } from '../utils/api';
-
 import './Day5_HashtagTool.css';
 
 import PageHeader from '../components/PageHeader';
@@ -10,6 +10,7 @@ import PageHeader from '../components/PageHeader';
 const Day5_HashtagTool = () => {
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
     const [keyword, setKeyword] = useState('');
     const [hashtags, setHashtags] = useState([]);
@@ -19,6 +20,8 @@ const Day5_HashtagTool = () => {
         e.preventDefault();
         if (!keyword.trim()) return;
 
+        console.log('Generating hashtags for:', { keyword, niche: user?.niche });
+
         setLoading(true);
         try {
             const response = await aiAPI.generateHashtags({
@@ -26,6 +29,10 @@ const Day5_HashtagTool = () => {
                 niche: user?.niche
             });
             setHashtags(response.data.hashtags || []);
+
+            // Show success notification
+            enqueueSnackbar('Hashtag berjaya dijana!', { variant: 'success' });
+
             await userAPI.updateProgress(5);
             updateUser({
                 progress: Math.max(user.progress, 6),
@@ -33,7 +40,8 @@ const Day5_HashtagTool = () => {
             });
         } catch (error) {
             console.error('Error generating hashtags:', error);
-            alert('Maaf, ada masalah. Sila cuba lagi.');
+            const errorMessage = error.response?.data?.message || error.message || 'Maaf, ada masalah. Sila cuba lagi.';
+            enqueueSnackbar(errorMessage, { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -43,11 +51,13 @@ const Day5_HashtagTool = () => {
         const allTags = hashtags.join(' ');
         navigator.clipboard.writeText(allTags);
         setCopied(true);
+        enqueueSnackbar('Semua hashtag disalin!', { variant: 'success' });
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleCopyTag = (tag) => {
         navigator.clipboard.writeText(tag);
+        enqueueSnackbar(`Hashtag ${tag} disalin!`, { variant: 'success' });
     };
 
     return (
@@ -129,14 +139,6 @@ const Day5_HashtagTool = () => {
                                     <span className="tag-text">{tag.replace('#', '')}</span>
                                 </div>
                             ))}
-                        </div>
-
-                        <div className="success-message">
-                            <div className="success-icon">✅</div>
-                            <div className="success-text">
-                                <p className="success-title">Hashtag Telah Dijana!</p>
-                                <p className="success-desc">Klik pada mana-mana hashtag untuk menyalin, atau klik "Salin Semua" di atas.</p>
-                            </div>
                         </div>
                     </div>
                 )}
