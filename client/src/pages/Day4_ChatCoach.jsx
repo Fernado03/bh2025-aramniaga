@@ -1,15 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI, userAPI } from '../utils/api';
-import Header from '../components/Header';
-import ChatBubble from '../components/ChatBubble';
-import Button from '../components/Button';
-import { Send } from 'lucide-react';
+import './Day4_ChatCoach.css';
 
 const Day4_ChatCoach = () => {
     const { user, updateUser } = useAuth();
+    const navigate = useNavigate();
     const [messages, setMessages] = useState([
-        { text: "Barang saya rosak! Saya nak refund sekarang!!! 😡", isUser: false }
+        { text: "Barang saya rosak! Saya nak refund sekarang!!! 😡", isUser: false, isCustomer: true }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -40,57 +39,129 @@ const Day4_ChatCoach = () => {
             });
 
             setFeedback(response.data);
+            
+            // Add AI feedback as a system message
             setMessages(prev => [...prev, {
-                text: `[AI Feedback]: Grade ${response.data.grade}. ${response.data.feedback}`,
-                isUser: false
+                text: response.data.feedback,
+                isUser: false,
+                isAI: true,
+                grade: response.data.grade
             }]);
 
             await userAPI.updateProgress(4);
             updateUser({ progress: Math.max(user.progress, 5) });
         } catch (error) {
             console.error('Error getting coaching:', error);
+            alert('Maaf, ada masalah. Sila cuba lagi.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleReset = () => {
+        setMessages([
+            { text: "Barang saya rosak! Saya nak refund sekarang!!! 😡", isUser: false, isCustomer: true }
+        ]);
+        setFeedback(null);
+        setInput('');
+    };
+
     return (
-        <div className="flex flex-col h-screen bg-gray-50">
-            <Header title="Hari 4: Chat Coach" showBack />
-
-            <div className="flex-1 overflow-y-auto p-4 pb-20">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 text-sm text-yellow-800">
-                    <strong>Situasi:</strong> Pelanggan marah sebab barang rosak. Cuba balas dengan tenang dan profesional.
+        <div className="chat-coach-container">
+            {/* Header */}
+            <div className="chat-header">
+                <div className="header-top">
+                    <button className="back-button" onClick={() => navigate('/dashboard')}>
+                        ←
+                    </button>
+                    <div className="header-title-section">
+                        <h1 className="chat-page-title">Chat Coach</h1>
+                        <p className="chat-page-subtitle">Belajar balas pelanggan dengan baik</p>
+                    </div>
                 </div>
+            </div>
 
+            {/* Scenario Info */}
+            <div className="scenario-info">
+                <div className="scenario-icon">⚠️</div>
+                <div className="scenario-text">
+                    <p className="scenario-title">Situasi:</p>
+                    <p className="scenario-desc">Pelanggan marah sebab barang rosak. Cuba balas dengan tenang dan profesional.</p>
+                </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="chat-messages">
                 {messages.map((msg, index) => (
-                    <ChatBubble key={index} message={msg.text} isUser={msg.isUser} />
+                    <div key={index} className={`message-wrapper ${msg.isUser ? 'user' : 'other'}`}>
+                        {msg.isCustomer && (
+                            <div className="message-bubble customer-bubble">
+                                <div className="customer-label">👤 Pelanggan</div>
+                                <div className="message-text">{msg.text}</div>
+                            </div>
+                        )}
+                        
+                        {msg.isUser && !msg.isCustomer && !msg.isAI && (
+                            <div className="message-bubble user-bubble">
+                                <div className="message-text">{msg.text}</div>
+                            </div>
+                        )}
+                        
+                        {msg.isAI && (
+                            <div className="message-bubble ai-bubble">
+                                <div className="ai-header">
+                                    <span className="ai-label">🤖 AI Coach</span>
+                                    <span className="ai-grade">Gred: {msg.grade}</span>
+                                </div>
+                                <div className="message-text">{msg.text}</div>
+                            </div>
+                        )}
+                    </div>
                 ))}
 
                 {loading && (
-                    <div className="flex justify-start mb-4">
-                        <div className="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm text-gray-500 text-sm italic animate-pulse">
-                            AI sedang menyemak jawapan anda...
+                    <div className="message-wrapper other">
+                        <div className="message-bubble loading-bubble">
+                            <div className="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <div className="loading-text">AI sedang menyemak jawapan anda...</div>
                         </div>
                     </div>
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-safe">
-                <form onSubmit={handleSend} className="flex gap-2 max-w-[480px] mx-auto">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Tulis balasan anda..."
-                        className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-teal-500 outline-none"
-                        disabled={loading || feedback}
-                    />
-                    <Button type="submit" disabled={loading || !input.trim() || feedback} size="sm" className="px-4">
-                        <Send size={20} />
-                    </Button>
-                </form>
+            {/* Input Area */}
+            <div className="chat-input-area">
+                {feedback ? (
+                    <button 
+                        className="reset-button"
+                        onClick={handleReset}
+                    >
+                        🔄 Cuba Lagi
+                    </button>
+                ) : (
+                    <form onSubmit={handleSend} className="chat-form">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Tulis balasan anda di sini..."
+                            className="chat-input"
+                            disabled={loading}
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={loading || !input.trim()} 
+                            className="send-button"
+                        >
+                            ➤
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );

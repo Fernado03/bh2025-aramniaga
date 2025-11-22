@@ -6,10 +6,12 @@ import BottomNav from './components/BottomNav';
 import { useAuth } from './context/AuthContext';
 
 // Pages
+import Splash from './pages/Splash';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import Statistics from './pages/Statistics';
 import Day1_Setup from './pages/Day1_Setup';
 import Day2_BioGenerator from './pages/Day2_BioGenerator';
 import Day3_PhotoAnalysis from './pages/Day3_PhotoAnalysis';
@@ -23,12 +25,13 @@ const AppContent = () => {
   const location = useLocation();
 
   // Hide bottom nav on auth pages or specific flows if needed
-  const showBottomNav = isAuthenticated && !['/login', '/register'].includes(location.pathname);
+  const showBottomNav = isAuthenticated && !['/login', '/register', '/'].includes(location.pathname);
 
   return (
     <MobileContainer>
       <div className="flex-1 relative">
         <Routes>
+          <Route path="/" element={<Splash />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -44,6 +47,12 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          <Route path="/statistics" element={
+            <ProtectedRoute>
+              <Statistics />
+            </ProtectedRoute>
+          } />
+
           <Route path="/day/1" element={<ProtectedRoute><Day1_Setup /></ProtectedRoute>} />
           <Route path="/day/2" element={<ProtectedRoute><Day2_BioGenerator /></ProtectedRoute>} />
           <Route path="/day/3" element={<ProtectedRoute><Day3_PhotoAnalysis /></ProtectedRoute>} />
@@ -51,8 +60,6 @@ const AppContent = () => {
           <Route path="/day/5" element={<ProtectedRoute><Day5_HashtagTool /></ProtectedRoute>} />
           <Route path="/day/6" element={<ProtectedRoute><Day6_StoryCanvas /></ProtectedRoute>} />
           <Route path="/day/7" element={<ProtectedRoute><Day7_WeeklyReport /></ProtectedRoute>} />
-
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </div>
       {showBottomNav && <BottomNav />}

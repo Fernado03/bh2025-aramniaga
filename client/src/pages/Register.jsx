@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
-import InputGroup from '../components/InputGroup';
-import Card from '../components/Card';
+import './Register.css';
 
 const Register = () => {
     const [formData, setFormData] = useState({ username: '', email: '', password: '' });
@@ -31,58 +29,88 @@ const Register = () => {
     };
 
     return (
-        <div className="p-6 flex flex-col justify-center min-h-[80vh]">
-            <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Mula Sekarang 🚀</h1>
-                <p className="text-gray-500">Bina empayar bisnes anda dalam 7 hari.</p>
-            </div>
+        <div className="register-container">
+            <div className="register-card">
+                <div className="register-header">
+                    <div className="register-logo">
+                        🚀
+                    </div>
+                    <h1 className="register-title">Mula Sekarang 🚀</h1>
+                    <p className="register-subtitle">Bina empayar bisnes anda dalam 7 hari.</p>
+                </div>
 
-            <Card className="mb-6">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <InputGroup
-                        label="Nama Pengguna"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        placeholder="Cth: AliMaju"
-                        required
-                    />
-                    <InputGroup
-                        label="Emel"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="nama@contoh.com"
-                        required
-                    />
-                    <InputGroup
-                        label="Kata Laluan"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        required
-                    />
+                <form onSubmit={handleSubmit} className="register-form">
+                    <div className="register-form-group">
+                        <label className="register-form-label">
+                            Nama Pengguna <span style={{ color: '#e53e3e' }}>*</span>
+                        </label>
+                        <input
+                            className="register-form-input"
+                            name="username"
+                            type="text"
+                            value={formData.username}
+                            onChange={handleChange}
+                            placeholder="Cth: AliMaju"
+                            required
+                        />
+                    </div>
+
+                    <div className="register-form-group">
+                        <label className="register-form-label">
+                            Emel <span style={{ color: '#e53e3e' }}>*</span>
+                        </label>
+                        <input
+                            className="register-form-input"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="nama@contoh.com"
+                            required
+                        />
+                    </div>
+
+                    <div className="register-form-group">
+                        <label className="register-form-label">
+                            Kata Laluan <span style={{ color: '#e53e3e' }}>*</span>
+                        </label>
+                        <input
+                            className="register-form-input"
+                            name="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+
+                    <p className="register-terms">
+                        Dengan mendaftar, anda bersetuju dengan <a href="#">Terma & Syarat</a> kami.
+                    </p>
 
                     {error && (
-                        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">
-                            {error}
+                        <div className="register-error-message">
+                            <span>⚠️</span>
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    <Button type="submit" loading={loading} className="mt-2">
-                        Daftar Akaun
-                    </Button>
+                    <button type="submit" className="register-button" disabled={loading}>
+                        {loading && <span className="register-loading-spinner"></span>}
+                        {loading ? 'Memuatkan...' : 'Daftar Akaun'}
+                    </button>
                 </form>
-            </Card>
 
-            <p className="text-center text-gray-600">
-                Sudah ada akaun?{' '}
-                <Link to="/login" className="text-teal-600 font-bold hover:underline">
-                    Log Masuk
-                </Link>
+                <div className="register-divider">atau</div>
+
+                <p className="register-login-link">
+                    Sudah ada akaun? <Link to="/login">Log Masuk</Link>
+                </p>
+            </div>
+
+            <p className="register-footer">
+                © 2567 AramNiaga. Semua hak terpelihara.
             </p>
         </div>
     );

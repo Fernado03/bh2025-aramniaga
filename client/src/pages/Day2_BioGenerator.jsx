@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI, userAPI } from '../utils/api';
-import Header from '../components/Header';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import ComparisonCard from '../components/ComparisonCard';
 import LoadingOverlay from '../components/LoadingOverlay';
+import './Day2_BioGenerator.css';
 
 const Day2_BioGenerator = () => {
     const { user, updateUser } = useAuth();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [generatedBios, setGeneratedBios] = useState([]);
     const [currentBio, setCurrentBio] = useState(user?.bio || '');
+    const [selectedBio, setSelectedBio] = useState('');
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -27,49 +27,120 @@ const Day2_BioGenerator = () => {
             updateUser({ progress: Math.max(user.progress, 3) });
         } catch (error) {
             console.error('Error generating bio:', error);
+            alert('Maaf, ada masalah. Sila cuba lagi.');
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <div className="pb-24">
-            <Header title="Hari 2: Bio Power" showBack />
-            {loading && <LoadingOverlay message="AI sedang menulis bio padu..." />}
+    const handleSelectBio = (bio) => {
+        setSelectedBio(bio);
+    };
 
-            <div className="p-4">
-                <div className="mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">Bio Yang Memukau ✨</h2>
-                    <p className="text-gray-500 text-sm">Bio Instagram adalah "kedai depan" anda. Pastikan ia menarik pelanggan dalam 3 saat pertama.</p>
+    const handleCopyBio = (bio) => {
+        navigator.clipboard.writeText(bio);
+        alert('Bio telah disalin! Sila tampal ke Instagram anda.');
+    };
+
+    return (
+        <div className="bio-generator-container">
+            {loading && <LoadingOverlay message="AI sedang menulis bio untuk anda..." />}
+            
+            {/* Header */}
+            <div className="bio-header">
+                <button className="back-button" onClick={() => navigate('/dashboard')}>
+                    ← Kembali
+                </button>
+                <h1 className="bio-page-title">Bio Generator</h1>
+                <p className="bio-page-subtitle">Jana bio menarik untuk bisnes anda</p>
+            </div>
+
+            <div className="bio-content">
+                {/* Info Section */}
+                <div className="bio-info-card">
+                    <div className="info-icon">✨</div>
+                    <div className="info-text">
+                        <h2 className="info-title">Bio Yang Menarik</h2>
+                        <p className="info-desc">Bio adalah "papan tanda" bisnes anda. Pastikan ia jelas dan menarik!</p>
+                    </div>
                 </div>
 
-                <Card className="mb-6">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium text-gray-700">Bio Sekarang (Optional)</label>
-                            <textarea
-                                value={currentBio}
-                                onChange={(e) => setCurrentBio(e.target.value)}
-                                placeholder="Copy paste bio Instagram anda sekarang..."
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-teal-500 outline-none min-h-[80px]"
-                            />
-                        </div>
-                        <Button onClick={handleGenerate} loading={loading}>
-                            Jana dengan AI
-                        </Button>
-                    </div>
-                </Card>
+                {/* Input Section */}
+                <div className="bio-input-section">
+                    <label className="bio-label">
+                        Bio Sedia Ada (Jika Ada)
+                    </label>
+                    <textarea
+                        value={currentBio}
+                        onChange={(e) => setCurrentBio(e.target.value)}
+                        placeholder="Taip bio Instagram anda sekarang di sini... (Jika tiada, biarkan kosong)"
+                        className="bio-textarea"
+                        rows="4"
+                    />
+                    <p className="bio-hint">💡 Tip: Beritahu kami tentang bisnes anda untuk hasil lebih baik</p>
+                </div>
 
+                {/* Generate Button */}
+                <button 
+                    className="bio-generate-button"
+                    onClick={handleGenerate}
+                    disabled={loading}
+                >
+                    <span className="button-icon">🤖</span>
+                    <span className="button-text">Jana Bio Dengan AI</span>
+                </button>
+
+                {/* Generated Bios */}
                 {generatedBios.length > 0 && (
-                    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="font-bold text-gray-900">Pilihan Bio Terbaik:</h3>
+                    <div className="bio-results-section">
+                        <h3 className="results-title">📝 Pilihan Bio Untuk Anda:</h3>
+                        
                         {generatedBios.map((bio, index) => (
-                            <ComparisonCard
-                                key={index}
-                                oldBio={currentBio}
-                                newBio={bio}
-                            />
+                            <div 
+                                key={index} 
+                                className={`bio-result-card ${selectedBio === bio ? 'selected' : ''}`}
+                            >
+                                <div className="result-header">
+                                    <span className="result-number">Pilihan {index + 1}</span>
+                                    {selectedBio === bio && <span className="selected-badge">✓ Dipilih</span>}
+                                </div>
+                                <div className="result-bio-text">
+                                    {bio}
+                                </div>
+                                <div className="result-actions">
+                                    <button 
+                                        className="action-button select-button"
+                                        onClick={() => handleSelectBio(bio)}
+                                    >
+                                        {selectedBio === bio ? '✓ Dipilih' : 'Pilih Ini'}
+                                    </button>
+                                    <button 
+                                        className="action-button copy-button"
+                                        onClick={() => handleCopyBio(bio)}
+                                    >
+                                        📋 Salin
+                                    </button>
+                                </div>
+                            </div>
                         ))}
+
+                        {selectedBio && (
+                            <div className="success-message">
+                                <div className="success-icon">✅</div>
+                                <div className="success-text">
+                                    <p className="success-title">Bio Telah Dipilih!</p>
+                                    <p className="success-desc">Klik butang "Salin" untuk copy, kemudian tampal ke Instagram anda.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {generatedBios.length === 0 && !loading && (
+                    <div className="empty-state">
+                        <div className="empty-icon">📱</div>
+                        <p className="empty-text">Klik butang di atas untuk jana bio anda</p>
                     </div>
                 )}
             </div>

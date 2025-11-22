@@ -1,54 +1,85 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, Mail, Briefcase } from 'lucide-react';
-import Button from '../components/Button';
-import Card from '../components/Card';
+import './Profile.css';
 
 const Profile = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
-        <div className="p-4 pb-24">
-            <div className="mb-6 text-center">
-                <div className="w-24 h-24 bg-teal-100 rounded-full mx-auto mb-4 flex items-center justify-center text-teal-600 text-3xl font-bold border-4 border-white shadow-lg">
-                    {user?.username?.[0]?.toUpperCase() || 'U'}
+        <div className="profile-container">
+            {/* Header */}
+            <div className="profile-header">
+                <div className="header-top">
+                    <button className="back-button" onClick={() => navigate('/dashboard')}>
+                        ←
+                    </button>
+                    <div className="header-title-section">
+                        <h1 className="page-title">Profil Saya</h1>
+                        <p className="page-subtitle">Maklumat akaun anda</p>
+                    </div>
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">{user?.username}</h1>
-                <p className="text-gray-500 text-sm">Ahli sejak 2025</p>
             </div>
 
-            <div className="flex flex-col gap-4">
-                <Card>
-                    <h3 className="font-bold text-gray-900 mb-4">Maklumat Peribadi</h3>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                            <User className="text-gray-400" size={20} />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase">Nama Pengguna</p>
-                                <p className="font-medium text-gray-800">{user?.username}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                            <Mail className="text-gray-400" size={20} />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase">Emel</p>
-                                <p className="font-medium text-gray-800">{user?.email}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                            <Briefcase className="text-gray-400" size={20} />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase">Bisnes</p>
-                                <p className="font-medium text-gray-800">{user?.businessName || 'Belum set'}</p>
-                            </div>
+            {/* Content */}
+            <div className="profile-content">
+                {/* Avatar Section */}
+                <div className="avatar-section">
+                    <div className="avatar-circle">
+                        {user?.username?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <h2 className="username">{user?.username}</h2>
+                    <p className="member-since">Ahli sejak 2025</p>
+                </div>
+
+                {/* Info Card */}
+                <div className="info-card">
+                    <h3 className="card-title">Maklumat Peribadi</h3>
+                    
+                    <div className="info-item">
+                        <div className="info-icon">👤</div>
+                        <div className="info-details">
+                            <p className="info-label">Nama Pengguna</p>
+                            <p className="info-value">{user?.username}</p>
                         </div>
                     </div>
-                </Card>
 
-                <Button variant="outline" onClick={logout} className="mt-4 text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-600">
-                    <LogOut size={18} className="mr-2" />
-                    Log Keluar
-                </Button>
+                    <div className="info-item">
+                        <div className="info-icon">📧</div>
+                        <div className="info-details">
+                            <p className="info-label">Emel</p>
+                            <p className="info-value">{user?.email}</p>
+                        </div>
+                    </div>
+
+                    <div className="info-item">
+                        <div className="info-icon">💼</div>
+                        <div className="info-details">
+                            <p className="info-label">Nama Bisnes</p>
+                            <p className="info-value">{user?.businessName || 'Belum ditetapkan'}</p>
+                        </div>
+                    </div>
+
+                    <div className="info-item">
+                        <div className="info-icon">🏷️</div>
+                        <div className="info-details">
+                            <p className="info-label">Kategori</p>
+                            <p className="info-value">{user?.niche || 'Belum ditetapkan'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Logout Button */}
+                <button className="logout-button" onClick={handleLogout}>
+                    <span className="logout-icon">🚪</span>
+                    <span>Log Keluar</span>
+                </button>
             </div>
         </div>
     );

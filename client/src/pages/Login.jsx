@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from '../components/Button';
-import InputGroup from '../components/InputGroup';
-import Card from '../components/Card';
+import './Login.css';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -31,50 +29,73 @@ const Login = () => {
     };
 
     return (
-        <div className="p-6 flex flex-col justify-center min-h-[80vh]">
-            <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Selamat Kembali! 👋</h1>
-                <p className="text-gray-500">Log masuk untuk teruskan perjalanan bisnes anda.</p>
-            </div>
+        <div className="login-container">
+            <div className="login-card">
+                <div className="login-header">
+                    <div className="login-logo">
+                        🚀
+                    </div>
+                    <h1 className="login-title">Selamat Kembali! 👋</h1>
+                    <p className="login-subtitle">Log masuk untuk teruskan perjalanan bisnes anda.</p>
+                </div>
 
-            <Card className="mb-6">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <InputGroup
-                        label="Emel"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="nama@contoh.com"
-                        required
-                    />
-                    <InputGroup
-                        label="Kata Laluan"
-                        name="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        required
-                    />
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="form-group">
+                        <label className="form-label">
+                            Emel <span style={{ color: '#e53e3e' }}>*</span>
+                        </label>
+                        <input
+                            className="form-input"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="nama@contoh.com"
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">
+                            Kata Laluan <span style={{ color: '#e53e3e' }}>*</span>
+                        </label>
+                        <input
+                            className="form-input"
+                            name="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+
+                    <div className="forgot-password">
+                        <a href="#" className="forgot-password-link">Lupa kata laluan?</a>
+                    </div>
 
                     {error && (
-                        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">
-                            {error}
+                        <div className="error-message">
+                            <span>⚠️</span>
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    <Button type="submit" loading={loading} className="mt-2">
-                        Log Masuk
-                    </Button>
+                    <button type="submit" className="login-button" disabled={loading}>
+                        {loading && <span className="loading-spinner"></span>}
+                        {loading ? 'Memuatkan...' : 'Log Masuk'}
+                    </button>
                 </form>
-            </Card>
 
-            <p className="text-center text-gray-600">
-                Belum ada akaun?{' '}
-                <Link to="/register" className="text-teal-600 font-bold hover:underline">
-                    Daftar Sekarang
-                </Link>
+                <div className="divider">atau</div>
+
+                <p className="register-link">
+                    Belum ada akaun? <Link to="/register">Daftar Sekarang</Link>
+                </p>
+            </div>
+
+            <p className="login-footer">
+                © 2567 AramNiaga. Semua hak terpelihara.
             </p>
         </div>
     );

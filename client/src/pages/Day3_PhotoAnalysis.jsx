@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI, userAPI } from '../utils/api';
 import { fileToBase64 } from '../utils/helpers';
-import Header from '../components/Header';
-import Button from '../components/Button';
-import Card from '../components/Card';
 import LoadingOverlay from '../components/LoadingOverlay';
-import { Upload, Image as ImageIcon, Copy, Check } from 'lucide-react';
+import './Day3_PhotoAnalysis.css';
 
 const Day3_PhotoAnalysis = () => {
     const { user, updateUser } = useAuth();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -40,6 +39,7 @@ const Day3_PhotoAnalysis = () => {
             updateUser({ progress: Math.max(user.progress, 4) });
         } catch (error) {
             console.error('Error analyzing image:', error);
+            alert('Maaf, ada masalah. Sila cuba lagi.');
         } finally {
             setLoading(false);
         }
@@ -54,57 +54,111 @@ const Day3_PhotoAnalysis = () => {
     };
 
     return (
-        <div className="pb-24">
-            <Header title="Hari 3: Analisis Foto" showBack />
-            {loading && <LoadingOverlay message="AI sedang meneliti foto anda..." />}
+        <div className="photo-analysis-container">
+            {loading && <LoadingOverlay message="AI sedang menganalisis foto anda..." />}
+            
+            {/* Header */}
+            <div className="photo-header">
+                <div className="header-top">
+                    <button className="back-button" onClick={() => navigate('/dashboard')}>
+                        ←
+                    </button>
+                    <div className="header-title-section">
+                        <h1 className="page-title">Analisis Post</h1>
+                        <p className="page-subtitle">Upload foto untuk analisis AI</p>
+                    </div>
+                </div>
+            </div>
 
-            <div className="p-4">
-                <div className="mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">Foto Yang Menjual 📸</h2>
-                    <p className="text-gray-500 text-sm">Upload gambar produk anda. AI akan beri rating dan cadangan caption.</p>
+            {/* Content */}
+            <div className="photo-content">
+                {/* Info Card */}
+                <div className="info-card">
+                    <div className="info-icon">📸</div>
+                    <div className="info-text">
+                        <h2 className="info-title">Foto Yang Menjual</h2>
+                        <p className="info-desc">Upload gambar produk anda. AI akan beri komen dan cadangan caption!</p>
+                    </div>
                 </div>
 
-                <Card className="mb-6">
-                    <div className="flex flex-col gap-4">
-                        <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-teal-500 transition-colors group cursor-pointer">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                            />
+                {/* Upload Section */}
+                <div className="upload-section">
+                    <div className="upload-area">
+                        <input
+                            type="file"
+                            id="photo-input"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="photo-input"
+                        />
+                        <label htmlFor="photo-input" className="upload-label">
                             {preview ? (
-                                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="preview-container">
+                                    <img src={preview} alt="Preview" className="preview-image" />
+                                    <div className="change-overlay">
+                                        <span className="change-text">📷 Tukar Foto</span>
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-400 group-hover:text-teal-500 transition-colors">
-                                    <Upload size={40} className="mb-2" />
-                                    <span className="text-sm font-medium">Tekan untuk upload</span>
+                                <div className="upload-placeholder">
+                                    <div className="upload-icon">📤</div>
+                                    <p className="upload-text">Tekan untuk pilih foto</p>
+                                    <p className="upload-hint">Gambar produk atau posting anda</p>
                                 </div>
                             )}
+                        </label>
+                    </div>
+
+                    <button 
+                        className="analyze-button"
+                        onClick={handleAnalyze}
+                        disabled={!image || loading}
+                    >
+                        <span className="button-icon">🔍</span>
+                        <span className="button-text">Analisis Foto</span>
+                    </button>
+                </div>
+
+                {/* Results */}
+                {analysis && (
+                    <div className="results-section">
+                        {/* AI Feedback */}
+                        <div className="feedback-card">
+                            <h3 className="feedback-title">💡 Komen AI:</h3>
+                            <p className="feedback-text">{analysis.feedback}</p>
                         </div>
 
-                        <Button onClick={handleAnalyze} disabled={!image} loading={loading}>
-                            Analisis Foto
-                        </Button>
-                    </div>
-                </Card>
-
-                {analysis && (
-                    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Card className="bg-teal-50 border-teal-200">
-                            <h3 className="font-bold text-teal-800 mb-2">Komen AI:</h3>
-                            <p className="text-gray-700 text-sm leading-relaxed mb-4">{analysis.feedback}</p>
-
-                            <div className="bg-white p-4 rounded-xl border border-teal-100">
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-xs font-bold text-teal-600 uppercase">Cadangan Caption</span>
-                                    <button onClick={handleCopyCaption} className="text-gray-400 hover:text-teal-500">
-                                        {copied ? <Check size={16} /> : <Copy size={16} />}
-                                    </button>
-                                </div>
-                                <p className="text-gray-800 text-sm whitespace-pre-wrap">{analysis.caption}</p>
+                        {/* Caption Card */}
+                        <div className="caption-card">
+                            <div className="caption-header">
+                                <h3 className="caption-title">✍️ Cadangan Caption</h3>
+                                <button 
+                                    className={`copy-button ${copied ? 'copied' : ''}`}
+                                    onClick={handleCopyCaption}
+                                >
+                                    {copied ? '✓ Disalin!' : '📋 Salin'}
+                                </button>
                             </div>
-                        </Card>
+                            <div className="caption-content">
+                                <p className="caption-text">{analysis.caption}</p>
+                            </div>
+                        </div>
+
+                        <div className="success-message">
+                            <div className="success-icon">✅</div>
+                            <div className="success-text">
+                                <p className="success-title">Analisis Selesai!</p>
+                                <p className="success-desc">Gunakan caption ini untuk posting anda di media sosial.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!analysis && !loading && (
+                    <div className="empty-state">
+                        <div className="empty-icon">🖼️</div>
+                        <p className="empty-text">Upload foto untuk mendapat analisis dan caption dari AI</p>
                     </div>
                 )}
             </div>

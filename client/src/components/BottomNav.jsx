@@ -1,31 +1,70 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, User } from 'lucide-react';
+import { Home, MessageSquare, Hash, User, Camera } from 'lucide-react';
+import './BottomNav.css';
 
 const BottomNav = () => {
     return (
-        <nav className="sticky bottom-0 z-50 bg-white border-t border-gray-100 pb-safe mt-auto shrink-0">
-            <div className="flex justify-around items-center h-16">
+        <nav className="bottom-nav">
+            <div className="bottom-nav-container">
                 <NavLink
                     to="/dashboard"
                     className={({ isActive }) =>
-                        `flex flex-col items-center gap-1 p-2 transition-colors ${isActive ? 'text-teal-500' : 'text-gray-400 hover:text-gray-600'
-                        }`
+                        `nav-item ${isActive ? 'active' : ''}`
                     }
                 >
-                    <Home size={24} />
-                    <span className="text-xs font-medium">Home</span>
+                    <div className="nav-icon-wrapper">
+                        <Home size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="nav-label">Home</span>
+                </NavLink>
+
+                <NavLink
+                    to="/day/3"
+                    className={({ isActive }) =>
+                        `nav-item ${isActive ? 'active' : ''}`
+                    }
+                >
+                    <div className="nav-icon-wrapper">
+                        <Camera size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="nav-label">Post</span>
+                </NavLink>
+
+                <NavLink
+                    to="/day/5"
+                    className={({ isActive }) =>
+                        `nav-item ${isActive ? 'active' : ''}`
+                    }
+                >
+                    <div className="nav-icon-wrapper">
+                        <Hash size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="nav-label">Caption</span>
+                </NavLink>
+
+                <NavLink
+                    to="/day/4"
+                    className={({ isActive }) =>
+                        `nav-item ${isActive ? 'active' : ''}`
+                    }
+                >
+                    <div className="nav-icon-wrapper">
+                        <MessageSquare size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="nav-label">Chat</span>
                 </NavLink>
 
                 <NavLink
                     to="/profile"
                     className={({ isActive }) =>
-                        `flex flex-col items-center gap-1 p-2 transition-colors ${isActive ? 'text-teal-500' : 'text-gray-400 hover:text-gray-600'
-                        }`
+                        `nav-item ${isActive ? 'active' : ''}`
                     }
                 >
-                    <User size={24} />
-                    <span className="text-xs font-medium">Profil</span>
+                    <div className="nav-icon-wrapper">
+                        <User size={24} strokeWidth={2.5} />
+                    </div>
+                    <span className="nav-label">Profil</span>
                 </NavLink>
             </div>
         </nav>
