@@ -55,7 +55,10 @@ export const aiAPI = {
   generateBio: (data) => api.post('/ai/generate-bio', data),
   analyzeImage: (imageBase64) => api.post('/ai/analyze-image', { imageBase64 }),
   chatCoach: (data) => api.post('/ai/chat-coach', data),
-  generateHashtags: (keyword) => api.post('/ai/generate-hashtags', { keyword }),
+  chatCustomer: (data) => api.post('/ai/chat-customer', data),
+  generateScenario: () => api.post('/ai/generate-scenario'),
+  generateHashtags: (data) => api.post('/ai/generate-hashtags', data),
+  evaluateStory: (imageBase64) => api.post('/ai/evaluate-story', { imageBase64 }),
 };
 
 export default api;

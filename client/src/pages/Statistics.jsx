@@ -8,23 +8,23 @@ const Statistics = () => {
 
     // Mock data for statistics
     const monthlyData = {
-        'Okt 2025': { 
-            followers: 2341, 
-            likes: 7823, 
-            comments: 1089, 
-            growth: [20, 35, 40, 55, 60, 70, 75] 
+        'Okt 2025': {
+            followers: 2341,
+            likes: 7823,
+            comments: 1089,
+            growth: [20, 35, 40, 55, 60, 70, 75]
         },
-        'Nov 2025': { 
-            followers: 2547, 
-            likes: 8432, 
-            comments: 1234, 
-            growth: [75, 80, 85, 92, 95, 98, 100] 
+        'Nov 2025': {
+            followers: 2547,
+            likes: 8432,
+            comments: 1234,
+            growth: [75, 80, 85, 92, 95, 98, 100]
         },
-        'Dis 2025': { 
-            followers: 2789, 
-            likes: 9156, 
-            comments: 1456, 
-            growth: [100, 110, 115, 120, 125, 130, 135] 
+        'Dis 2025': {
+            followers: 2789,
+            likes: 9156,
+            comments: 1456,
+            growth: [100, 110, 115, 120, 125, 130, 135]
         }
     };
 
@@ -57,33 +57,12 @@ const Statistics = () => {
                 </div>
 
                 {/* Detailed Stats Cards - Single Row */}
-                <div className="detailed-stats-grid">
-                    <div className="detailed-stat-card card-followers">
-                        <div className="detailed-stat-icon">👥</div>
-                        <div className="detailed-stat-value">{currentStats.followers.toLocaleString()}</div>
-                        <div className="detailed-stat-label">Pengikut</div>
-                        <div className="detailed-stat-change positive">+12% ↑</div>
-                    </div>
 
-                    <div className="detailed-stat-card card-likes">
-                        <div className="detailed-stat-icon">❤️</div>
-                        <div className="detailed-stat-value">{currentStats.likes.toLocaleString()}</div>
-                        <div className="detailed-stat-label">Suka</div>
-                        <div className="detailed-stat-change positive">+24% ↑</div>
-                    </div>
-
-                    <div className="detailed-stat-card card-comments">
-                        <div className="detailed-stat-icon">💬</div>
-                        <div className="detailed-stat-value">{currentStats.comments.toLocaleString()}</div>
-                        <div className="detailed-stat-label">Komen</div>
-                        <div className="detailed-stat-change positive">+8% ↑</div>
-                    </div>
-                </div>
 
                 {/* Month Filter */}
                 <div className="month-filter-section">
                     <label className="month-filter-label">📅 Pilih Bulan:</label>
-                    <select 
+                    <select
                         className="month-filter-select"
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(e.target.value)}
@@ -98,11 +77,11 @@ const Statistics = () => {
                 <div className="growth-chart-section">
                     <h3 className="growth-chart-title">📈 Graf Pertumbuhan - {selectedMonth}</h3>
                     <p className="growth-chart-desc">Pertumbuhan pengikut sepanjang bulan</p>
-                    
+
                     <div className="growth-chart">
                         {currentStats.growth.map((value, index) => (
                             <div key={index} className="chart-bar-container">
-                                <div 
+                                <div
                                     className="chart-bar"
                                     style={{ height: `${(value / Math.max(...currentStats.growth)) * 100}%` }}
                                 >

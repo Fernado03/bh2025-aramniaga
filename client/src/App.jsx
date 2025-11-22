@@ -4,6 +4,7 @@ import MobileContainer from './components/MobileContainer';
 import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
 import { useAuth } from './context/AuthContext';
+import ScrollToTop from './components/ScrollToTop';
 
 // Pages
 import Splash from './pages/Splash';
@@ -29,7 +30,8 @@ const AppContent = () => {
 
   return (
     <MobileContainer>
-      <div className="flex-1 relative">
+      <ScrollToTop />
+      <div className={`flex-1 relative ${showBottomNav ? 'pb-24' : ''}`}>
         <Routes>
           <Route path="/" element={<Splash />} />
           <Route path="/login" element={<Login />} />

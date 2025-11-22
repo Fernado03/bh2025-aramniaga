@@ -1,0 +1,72 @@
+.page-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    padding: 1.5rem 1rem;
+    border-bottom: none;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    color: white !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    outline: none !important;
+    box-shadow: none;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: none;
+    box-shadow: none;
+    color: white !important;
+}
+
+.back-button:active {
+    transform: scale(0.95);
+}
+
+.header-title-section {
+    flex: 1;
+    overflow: hidden;
+}
+
+.page-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: white !important;
+    margin: 0 0 0.2rem 0;
+    line-height: 1.2;
+    letter-spacing: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin: 0;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

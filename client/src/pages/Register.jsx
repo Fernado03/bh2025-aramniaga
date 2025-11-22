@@ -21,7 +21,7 @@ const Register = () => {
 
         const result = await register(formData);
         if (result.success) {
-            navigate('/dashboard');
+            navigate('/day/1');
         } else {
             setError(result.error);
         }

@@ -20,13 +20,17 @@ router.get('/me', protect, async (req, res) => {
       email: user.email,
       businessName: user.businessName,
       niche: user.niche,
+      niche: user.niche,
       description: user.description,
+      bio: user.bio,
       currentDay: user.currentDay,
       completedDays: user.completedDays,
       stats: user.stats,
       badges: user.badges,
       generatedBios: user.generatedBios,
       savedCaptions: user.savedCaptions,
+      day4Result: user.day4Result,
+      day6Result: user.day6Result,
     });
   } catch (error) {
     console.error(error);
@@ -109,7 +113,7 @@ router.put('/progress', protect, async (req, res) => {
 // @access  Private
 router.put('/update', protect, async (req, res) => {
   try {
-    const { businessName, niche, description } = req.body;
+    const { businessName, niche, description, bio } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -121,6 +125,7 @@ router.put('/update', protect, async (req, res) => {
     if (businessName !== undefined) user.businessName = businessName;
     if (niche !== undefined) user.niche = niche;
     if (description !== undefined) user.description = description;
+    if (bio !== undefined) user.bio = bio;
 
     await user.save();
 
@@ -129,6 +134,7 @@ router.put('/update', protect, async (req, res) => {
       businessName: user.businessName,
       niche: user.niche,
       description: user.description,
+      bio: user.bio,
     });
   } catch (error) {
     console.error(error);

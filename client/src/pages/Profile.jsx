@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Profile.css';
+import PageHeader from '../components/PageHeader';
 
 const Profile = () => {
     const { user, logout } = useAuth();
@@ -14,18 +15,11 @@ const Profile = () => {
 
     return (
         <div className="profile-container">
-            {/* Header */}
-            <div className="profile-header">
-                <div className="header-top">
-                    <button className="back-button" onClick={() => navigate('/dashboard')}>
-                        ←
-                    </button>
-                    <div className="header-title-section">
-                        <h1 className="page-title">Profil Saya</h1>
-                        <p className="page-subtitle">Maklumat akaun anda</p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                title="Profil Saya"
+                subtitle="Maklumat akaun anda"
+                backPath="/dashboard"
+            />
 
             {/* Content */}
             <div className="profile-content">
@@ -41,7 +35,7 @@ const Profile = () => {
                 {/* Info Card */}
                 <div className="info-card">
                     <h3 className="card-title">Maklumat Peribadi</h3>
-                    
+
                     <div className="info-item">
                         <div className="info-icon">👤</div>
                         <div className="info-details">

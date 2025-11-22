@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    bio: {
+      type: String,
+      default: '',
+    },
 
     // Gamification Engine
     currentDay: {
@@ -74,11 +78,15 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    generatedHashtags: {
+      type: [String],
+      default: [],
+    },
     savedCaptions: {
       type: [
         {
-          caption: String,
-          explanation: String,
+          captions: [String],
+          feedback: String,
           imageUrl: String,
           createdAt: {
             type: Date,
@@ -87,6 +95,16 @@ const userSchema = new mongoose.Schema(
         },
       ],
       default: [],
+    },
+    day4Result: {
+      grade: String,
+      feedback: String,
+      tips: String,
+    },
+    day6Result: {
+      grade: String,
+      feedback: String,
+      tips: String,
     },
   },
   {

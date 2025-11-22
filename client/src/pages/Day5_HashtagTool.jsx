@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiAPI, userAPI } from '../utils/api';
-import LoadingOverlay from '../components/LoadingOverlay';
+
 import './Day5_HashtagTool.css';
+
+import PageHeader from '../components/PageHeader';
 
 const Day5_HashtagTool = () => {
     const { user, updateUser } = useAuth();
@@ -25,7 +27,10 @@ const Day5_HashtagTool = () => {
             });
             setHashtags(response.data.hashtags || []);
             await userAPI.updateProgress(5);
-            updateUser({ progress: Math.max(user.progress, 6) });
+            updateUser({
+                progress: Math.max(user.progress, 6),
+                generatedHashtags: response.data.hashtags || []
+            });
         } catch (error) {
             console.error('Error generating hashtags:', error);
             alert('Maaf, ada masalah. Sila cuba lagi.');
@@ -35,7 +40,7 @@ const Day5_HashtagTool = () => {
     };
 
     const handleCopyAll = () => {
-        const allTags = hashtags.map(h => h.tag).join(' ');
+        const allTags = hashtags.join(' ');
         navigator.clipboard.writeText(allTags);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -47,20 +52,13 @@ const Day5_HashtagTool = () => {
 
     return (
         <div className="hashtag-tool-container">
-            {loading && <LoadingOverlay message="AI sedang mencari hashtag viral..." />}
-            
-            {/* Header */}
-            <div className="hashtag-header">
-                <div className="header-top">
-                    <button className="back-button" onClick={() => navigate('/dashboard')}>
-                        ←
-                    </button>
-                    <div className="header-title-section">
-                        <h1 className="page-title">Caption Generator</h1>
-                        <p className="page-subtitle">Jana hashtag untuk posting anda</p>
-                    </div>
-                </div>
-            </div>
+
+
+            <PageHeader
+                title="Caption Generator"
+                subtitle="Jana hashtag untuk posting anda"
+                backPath="/dashboard"
+            />
 
             {/* Content */}
             <div className="hashtag-content">
@@ -77,19 +75,28 @@ const Day5_HashtagTool = () => {
                 <form onSubmit={handleGenerate} className="hashtag-form">
                     <div className="form-group">
                         <label className="form-label">Topik Posting Anda</label>
-                        <input
-                            type="text"
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            placeholder="Contoh: Resepi Kek Batik"
-                            className="form-input"
-                            required
-                        />
+                        <div className="input-container">
+                            <input
+                                type="text"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                                placeholder="Contoh: Resepi Kek Batik"
+                                className="form-input"
+                                required
+                                disabled={loading}
+                            />
+                            {loading && (
+                                <div className="input-loading-overlay">
+                                    <div className="loading-spinner"></div>
+                                    <p>AI sedang mencari hashtag...</p>
+                                </div>
+                            )}
+                        </div>
                         <p className="form-hint">💡 Tip: Taip tentang apa posting anda</p>
                     </div>
 
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         className="generate-button"
                         disabled={loading}
                     >
@@ -103,7 +110,7 @@ const Day5_HashtagTool = () => {
                     <div className="results-section">
                         <div className="results-header">
                             <h3 className="results-title">📝 Hashtag Dicadangkan:</h3>
-                            <button 
+                            <button
                                 className={`copy-all-button ${copied ? 'copied' : ''}`}
                                 onClick={handleCopyAll}
                             >
@@ -112,14 +119,14 @@ const Day5_HashtagTool = () => {
                         </div>
 
                         <div className="hashtags-grid">
-                            {hashtags.map((item, index) => (
+                            {hashtags.map((tag, index) => (
                                 <div
                                     key={index}
                                     className="hashtag-tag"
-                                    onClick={() => handleCopyTag(item.tag)}
+                                    onClick={() => handleCopyTag(tag)}
                                 >
                                     <span className="tag-icon">#</span>
-                                    <span className="tag-text">{item.tag.replace('#', '')}</span>
+                                    <span className="tag-text">{tag.replace('#', '')}</span>
                                 </div>
                             ))}
                         </div>

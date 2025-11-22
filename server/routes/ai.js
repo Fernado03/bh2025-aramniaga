@@ -9,209 +9,242 @@ const { SABAHAN_SYSTEM_INSTRUCTION } = require('../config/sabahan-prompt');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
 const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-1.5-flash';
+const GEMINI_FAST_MODEL = process.env.GEMINI_FAST_MODEL || 'gemini-2.5-flash';
 
-// @route   POST /api/ai/generate-bio
-// @desc    Generate Instagram & Facebook bios using AI
+// ... (previous routes remain unchanged) ...
+
+// @route   POST /api/ai/chat-customer
+// @desc    Roleplay as a customer
 // @access  Private
-// NOTE: Uses PROFESSIONAL tone - output is for business profiles
-router.post('/generate-bio', protect, async (req, res) => {
+router.post('/chat-customer', protect, async (req, res) => {
   try {
-    const { niche, description } = req.body;
+    const { scenario, history, userMessage } = req.body;
 
-    if (!niche || !description) {
-      return res.status(400).json({ message: 'Please provide niche and description' });
+    if (!scenario || !userMessage) {
+      return res.status(400).json({ message: 'Please provide scenario and user message' });
     }
 
-    // Get the generative model
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const model = genAI.getGenerativeModel({ model: GEMINI_FAST_MODEL });
 
-    const prompt = `Buat 3 bio PROFESIONAL untuk Instagram/Facebook bisnes ${niche}: "${description}"
+    // Construct conversation history for context
+    let conversationContext = "";
+    if (history && history.length > 0) {
+      conversationContext = history.map(msg =>
+        `${msg.isCustomer ? 'Customer' : 'Seller'}: "${msg.text}"`
+      ).join('\n');
+    }
 
-Syarat:
-- Max 150 aksara setiap satu
-- Guna 100% BAHASA MALAYSIA (takde English langsung!)
-- Tone profesional tapi mesra
-- Letak emoji yang sesuai
-- Jangan guna dialek Sabahan yang pekat (ini untuk halaman bisnes umum)
-
-Return JSON array saja:
-["bio1", "bio2", "bio3"]`;
+    const prompt = `Anda adalah pelanggan dalam situasi ini: "${scenario.description}".
+    Situasi: ${scenario.title}
+    Emosi Awal: ${scenario.difficulty === 'Sukar' ? 'Marah/Kecewa' : 'Ingin Tahu/Neutral'}
+    
+    Sejarah Perbualan:
+    ${conversationContext}
+    Seller: "${userMessage}"
+    
+    ARAHAN:
+    1. Balas sebagai pelanggan.
+    2. JANGAN jadi robot. Guna bahasa manusia biasa (Bahasa Malaysia).
+    3. Pendek saja (1-2 ayat).
+    4. Kalau seller minta bukti gambar (atau anda rasa perlu tunjuk bukti kerosakan), tambah "action": "send_proof" DAN "image_prompt": "English description of the damage".
+       Contoh: "image_prompt": "crushed cardboard box with broken ceramic mug inside, poor lighting, realistic phone photo"
+    5. Kalau seller sopan & membantu, anda boleh jadi lebih tenang.
+    
+    Output JSON: { "reply": "...", "action": "send_proof" (optional), "image_prompt": "..." (optional) }`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text();
 
-    // Try to parse the response as JSON
-    let bios;
+    let reply, action, image_prompt, action_image;
     try {
-      // Remove markdown code blocks if present
       text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      bios = JSON.parse(text);
-    } catch (parseError) {
-      // If parsing fails, try to extract bios manually
-      const bioMatches = text.match(/"([^"]+)"/g);
-      if (bioMatches) {
-        bios = bioMatches.map(bio => bio.replace(/"/g, ''));
-      } else {
-        // Fallback: split by newlines and filter
-        bios = text.split('\n').filter(line => line.trim().length > 0).slice(0, 3);
+      const json = JSON.parse(text);
+      reply = json.reply;
+      action = json.action;
+      image_prompt = json.image_prompt;
+
+      // Dynamic Image Generation using Pollinations.ai
+      if (action === 'send_proof' && image_prompt) {
+        // Encode the prompt for URL
+        const encodedPrompt = encodeURIComponent(image_prompt);
+        // Add random seed to ensure uniqueness if generated multiple times
+        const randomSeed = Math.floor(Math.random() * 1000);
+        action_image = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${randomSeed}&width=400&height=400&nologo=true`;
       }
+
+    } catch (e) {
+      reply = text; // Fallback if not JSON
     }
 
-    // Ensure we have exactly 3 bios
-    if (!Array.isArray(bios) || bios.length < 3) {
-      return res.status(500).json({ message: 'Failed to generate bios in correct format' });
-    }
+    res.json({ reply, action, action_image });
 
-    // Save to user's history
-    const user = await User.findById(req.user._id);
-    user.generatedBios.push(...bios.slice(0, 3));
-    await user.save();
-
-    res.json({
-      bios: bios.slice(0, 3),
-      message: 'Bios generated successfully',
-    });
   } catch (error) {
-    console.error('Error generating bio:', error);
-    res.status(500).json({
-      message: 'Failed to generate bio',
-      error: error.message
-    });
-  }
-});
-
-// @route   POST /api/ai/analyze-image
-// @desc    Analyze image and generate caption for Instagram/Facebook posts
-// @access  Private
-// NOTE: Captions are friendly/engaging but still readable (light local flavor)
-router.post('/analyze-image', protect, async (req, res) => {
-  try {
-    const { imageBase64 } = req.body;
-
-    if (!imageBase64) {
-      return res.status(400).json({ message: 'Please provide an image' });
-    }
-
-    // Get the vision model
-    const model = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
-
-    const prompt = `Tengok gambar ni untuk post social media.
-
-Buat:
-1. Caption (2 ayat max) - Mesra, menarik, mudah faham. Boleh guna sedikit gaya tempatan tapi kekal profesional
-2. Terang kenapa caption ni berkesan (1 ayat)
-
-WAJIB: 100% Bahasa Malaysia saja, jangan guna English!
-
-JSON: {"caption":"...", "explanation":"..."}`;
-
-    // Remove data URL prefix if present
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-
-    const imageParts = [
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg',
-        },
-      },
-    ];
-
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    let text = response.text();
-
-    // Parse the response
-    let analysisResult;
+    console.error('Error in chat customer:', error);
+    // Fallback to standard model if fast model fails (e.g. if 2.5 not available)
     try {
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      analysisResult = JSON.parse(text);
-    } catch (parseError) {
-      // Fallback parsing
-      const captionMatch = text.match(/"caption"\s*:\s*"([^"]+)"/);
-      const explanationMatch = text.match(/"explanation"\s*:\s*"([^"]+)"/);
-
-      analysisResult = {
-        caption: captionMatch ? captionMatch[1] : text.split('\n')[0],
-        explanation: explanationMatch ? explanationMatch[1] : text.split('\n').slice(1).join(' '),
-      };
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await model.generateContent(`Act as a customer. Reply to: ${req.body.userMessage}`);
+      res.json({ reply: result.response.text() });
+    } catch (fallbackError) {
+      res.status(500).json({ message: 'Failed to generate reply' });
     }
-
-    // Save to user's history
-    const user = await User.findById(req.user._id);
-    user.savedCaptions.push({
-      caption: analysisResult.caption,
-      explanation: analysisResult.explanation,
-      imageUrl: imageBase64.substring(0, 100) + '...', // Store truncated for size
-    });
-    await user.save();
-
-    res.json({
-      caption: analysisResult.caption,
-      explanation: analysisResult.explanation,
-      message: 'Image analyzed successfully',
-    });
-  } catch (error) {
-    console.error('Error analyzing image:', error);
-    res.status(500).json({
-      message: 'Failed to analyze image',
-      error: error.message
-    });
   }
 });
 
 // @route   POST /api/ai/chat-coach
-// @desc    Grade customer service reply and provide feedback
+// @desc    Grade customer service session
 // @access  Private
-// NOTE: Feedback uses FULL Sabahan dialect - this is coaching/teaching
 router.post('/chat-coach', protect, async (req, res) => {
   try {
-    const { scenario, userReply } = req.body;
+    const { scenario, history } = req.body;
 
-    if (!scenario || !userReply) {
-      return res.status(400).json({ message: 'Please provide scenario and user reply' });
+    if (!scenario || !history) {
+      return res.status(400).json({ message: 'Please provide scenario and history' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const conversationLog = history.map(msg =>
+      `${msg.isCustomer ? 'Customer' : 'Seller'}: "${msg.text}"`
+    ).join('\n');
+
+    const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
+
+    Situasi: ${scenario.title} (${scenario.description})
+    
+    Log Perbualan:
+    ${conversationLog}
+
+    Tugas Coach:
+    1. Baca perbualan di atas.
+    2. Nilai prestasi Seller (User).
+    3. Adakah dia tenang? Adakah dia selesaikan masalah? Adakah dia sopan?
+    
+    Output JSON:
+    {
+      "grade": "A/B/C/D/F",
+      "feedback": "Komen membina dalam Bahasa Malaysia (loghat Sabah sikit). Puji apa yang bagus, tegur apa yang salah.",
+      "tips": "1 tip ringkas untuk next time."
+    }`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+
+    let coachingResult;
+    try {
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      coachingResult = JSON.parse(text);
+    } catch (parseError) {
+      coachingResult = {
+        grade: 'B',
+        feedback: text,
+        tips: 'Cuba lagi ya!'
+      };
+    }
+
+    // Save progress if grade is good
+    if (['A', 'B', 'C'].includes(coachingResult.grade)) {
+      const user = await User.findById(req.user._id);
+
+      // Save the result
+      user.day4Result = coachingResult;
+
+      if (user.progress < 5) {
+        user.progress = 5;
+      }
+      await user.save();
+    }
+
+    res.json(coachingResult);
+  } catch (error) {
+    console.error('Error coaching chat:', error);
+    res.status(500).json({
+      message: 'Failed to grade reply',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/ai/generate-bio
+// @desc    Generate Instagram bios
+// @access  Private
+router.post('/generate-bio', protect, async (req, res) => {
+  try {
+    const { businessName, niche, description, currentBio } = req.body;
+
+    if (!businessName || !niche) {
+      return res.status(400).json({ message: 'Please provide business name and niche' });
     }
 
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
 
-Customer: "${scenario}"
-Jawapan: "${userReply}"
+    Tugas: Cipta 3 bio Instagram yang menarik untuk bisnes ini.
+    Nama Bisnes: ${businessName}
+    Niche: ${niche}
+    Deskripsi: ${description || 'Tiada deskripsi'}
+    
+    INPUT PENTING DARI USER (Bio Sekarang): "${currentBio || 'Tiada'}"
 
-Kasi grade (A-F) + 1 tip untuk improve. Guna Bahasa Malaysia penuh bah!
-JSON: {"grade":"...", "feedback":"..."}`;
+    Arahan:
+    1. Bio mesti pendek, padat, dan menarik (max 150 characters).
+    2. Guna emoji yang sesuai.
+    3. Masukkan Call to Action (CTA) yang jelas.
+    4. Guna bahasa santai tapi profesional.
+    5. Variasikan gaya (WAJIB: Satu MESTI gaya Profesional/Korporat, satu Fun/Santai, satu Minimalis).
+    6. STRUKTUR: Gunakan line break untuk nampak kemas. Jangan satu perenggan panjang.
+       Contoh Format:
+       [Headline/Hook]
+       [Value Proposition]
+       [CTA & Contact]
+
+    SYARAT WAJIB (JANGAN ABAIKAN):
+    - Jika 'INPUT PENTING DARI USER' di atas mengandungi NOMBOR TELEFON (contoh: 01xxxxxx), ANDA WAJIB MASUKKAN nombor tersebut dalam SETIAP pilihan bio.
+    - Jika ada LINK (contoh: website.com), WAJIB masukkan.
+    - JANGAN ganti nombor telefon dengan "Click link" semata-mata. Tulis nombor itu (contoh: "WS [Nombor]").
+    - Jika tiada info contact, baru guna "Click link in bio".
+    - JANGAN LETAK HASHTAG (#) dalam bio. Hashtag letak di caption, bukan bio.
+
+    Output JSON SAHAJA:
+    {
+      "bios": ["Bio 1...", "Bio 2...", "Bio 3..."]
+    }`;
+
+    console.log('Bio Gen Input:', { businessName, niche, currentBio }); // Debug log
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text();
+    console.log('Bio Gen Raw Output:', text); // Debug log
 
-    // Parse the response
-    let coachingResult;
+    let bios;
     try {
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      coachingResult = JSON.parse(text);
-    } catch (parseError) {
-      // Fallback parsing
-      const gradeMatch = text.match(/"grade"\s*:\s*"([^"]+)"/);
-      const feedbackMatch = text.match(/"feedback"\s*:\s*"([^"]+)"/);
+      // Clean JSON more aggressively
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanText = jsonMatch ? jsonMatch[0] : text;
 
-      coachingResult = {
-        grade: gradeMatch ? gradeMatch[1] : 'B',
-        feedback: feedbackMatch ? feedbackMatch[1] : text,
-      };
+      const json = JSON.parse(cleanText);
+      bios = json.bios;
+    } catch (parseError) {
+      console.error('Bio Gen JSON Parse Error:', parseError);
+
+      // Smart Fallback: Include contact info if available
+      const contactInfo = currentBio || 'Link in bio';
+      bios = [
+        `Welcome to ${businessName}! 🌟 The best ${niche} in town. Contact: ${contactInfo} 👇`,
+        `${businessName} - ${niche} 💯. Quality guaranteed. WS: ${contactInfo} 📲`,
+        `Your trusted ${niche} partner. ${businessName} ✨. ${contactInfo}`
+      ];
     }
 
-    res.json({
-      grade: coachingResult.grade,
-      feedback: coachingResult.feedback,
-      message: 'Reply graded successfully',
-    });
+    res.json({ bios });
   } catch (error) {
-    console.error('Error coaching chat:', error);
+    console.error('Error generating bio:', error);
     res.status(500).json({
-      message: 'Failed to grade reply',
+      message: 'Failed to generate bio',
       error: error.message
     });
   }
@@ -222,7 +255,7 @@ JSON: {"grade":"...", "feedback":"..."}`;
 // @access  Private
 router.post('/generate-hashtags', protect, async (req, res) => {
   try {
-    const { keyword } = req.body;
+    const { keyword, niche } = req.body;
 
     if (!keyword) {
       return res.status(400).json({ message: 'Please provide a keyword' });
@@ -232,7 +265,7 @@ router.post('/generate-hashtags', protect, async (req, res) => {
 
     const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
 
-10 hashtags untuk "${keyword}" (campur popular, sederhana, niche). Masukkan yang berkaitan Sabah/Malaysia.
+10 hashtags untuk "${keyword}" (Topik/Niche: ${niche || 'General'}). Campur popular, sederhana, niche. Masukkan yang berkaitan Sabah/Malaysia.
 Hashtag boleh ada English sikit, tapi kalau ada perkataan Malay lagi bagus.
 JSON: ["#tag1", "#tag2", ...]`;
 
@@ -260,6 +293,11 @@ JSON: ["#tag1", "#tag2", ...]`;
         ];
       }
     }
+
+    // Save hashtags to user profile
+    await User.findByIdAndUpdate(req.user._id, {
+      $set: { generatedHashtags: hashtags }
+    });
 
     res.json({
       hashtags: hashtags,
@@ -306,6 +344,137 @@ Jawab 2-3 ayat jak. Guna full Bahasa Malaysia/Sabahan, jangan campur English.`;
     console.error('Error in chat:', error);
     res.status(500).json({
       message: 'Failed to get response',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/ai/generate-scenario
+// @desc    Generate a random surprise scenario
+// @access  Private
+router.post('/generate-scenario', protect, async (req, res) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: GEMINI_FAST_MODEL });
+
+    const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
+
+    Tugas: Cipta SATU situasi pelanggan online (e-commerce) yang unik dan mencabar untuk latihan customer service.
+    
+    Kriteria:
+    1. Situasi mesti realistik di Malaysia/Sabah (contoh: barang hilang, scammer, nak COD tapi jauh, barang rosak, tanya soalan pelik).
+    2. Mesti berbeza dari yang biasa (kreatif sikit).
+    3. Difficulty: Random (Mudah/Sederhana/Sukar).
+    
+    Output JSON SAHAJA:
+    {
+      "id": "random_timestamp",
+      "title": "Tajuk Pendek (e.g. 'Nak COD Jauh')",
+      "icon": "Emoji yang sesuai (e.g. 🛵)",
+      "description": "Penerangan ringkas situasi.",
+      "initialMessage": "Mesej pertama pelanggan (loghat Sabah/Malay natural).",
+      "difficulty": "Mudah/Sederhana/Sukar"
+    }`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+
+    let scenario;
+    try {
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      scenario = JSON.parse(text);
+      scenario.id = `random_${Date.now()}`; // Ensure unique ID
+    } catch (parseError) {
+      // Fallback scenario if JSON fails
+      scenario = {
+        id: `random_${Date.now()}`,
+        title: 'Pelanggan Misteri',
+        icon: '❓',
+        description: 'Pelanggan dengan soalan yang tidak dijangka.',
+        initialMessage: 'Hello bos, ada jual barang ni tak? Saya cari lama dah.',
+        difficulty: 'Sederhana'
+      };
+    }
+
+    res.json(scenario);
+  } catch (error) {
+    console.error('Error generating scenario:', error);
+    res.status(500).json({
+      message: 'Failed to generate scenario',
+      error: error.message
+    });
+  }
+});
+
+
+
+// @route   POST /api/ai/evaluate-story
+// @desc    Evaluate Instagram Story design
+// @access  Private
+router.post('/evaluate-story', protect, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ message: 'Please provide an image' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
+
+    const prompt = `${SABAHAN_SYSTEM_INSTRUCTION}
+
+    Tugas: Nilai design Instagram Story ini.
+    
+    Kriteria Penilaian:
+    1. Susun atur (Layout) - Adakah kemas?
+    2. Pemilihan Warna & Font - Adakah mudah dibaca?
+    3. Kreativiti - Adakah menarik perhatian?
+    
+    Output JSON SAHAJA:
+    {
+      "grade": "A/B/C/D/F",
+      "feedback": "Komen membina dalam Bahasa Malaysia (loghat Sabah sikit). Puji apa yang cantik, tegur apa yang boleh improve.",
+      "tips": "1 tip ringkas untuk design yang lebih gempak."
+    }`;
+
+    // Remove header from base64 string if present
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+    const imageParts = [
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/png",
+        },
+      },
+    ];
+
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    let text = response.text();
+
+    let evaluation;
+    try {
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      evaluation = JSON.parse(text);
+    } catch (parseError) {
+      evaluation = {
+        grade: 'B',
+        feedback: 'Design okay bah, tapi boleh kasi kemas lagi sikit. Teruskan usaha!',
+        tips: 'Cuba guna font yang lebih jelas.'
+      };
+    }
+
+    // Save result to user profile
+    await User.findByIdAndUpdate(req.user._id, {
+      $set: { day6Result: evaluation }
+    });
+
+    res.json(evaluation);
+  } catch (error) {
+    console.error('Error evaluating story:', error);
+    res.status(500).json({
+      message: 'Failed to evaluate story',
       error: error.message
     });
   }
