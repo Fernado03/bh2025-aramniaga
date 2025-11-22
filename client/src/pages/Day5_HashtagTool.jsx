@@ -33,9 +33,7 @@ const Day5_HashtagTool = () => {
             // Show success notification
             enqueueSnackbar('Hashtag berjaya dijana!', { variant: 'success' });
 
-            await userAPI.updateProgress(5);
             updateUser({
-                progress: Math.max(user.progress, 6),
                 generatedHashtags: response.data.hashtags || []
             });
         } catch (error) {
@@ -47,12 +45,23 @@ const Day5_HashtagTool = () => {
         }
     };
 
-    const handleCopyAll = () => {
+    const handleCopyAll = async () => {
         const allTags = hashtags.join(' ');
         navigator.clipboard.writeText(allTags);
         setCopied(true);
         enqueueSnackbar('Semua hashtag disalin!', { variant: 'success' });
         setTimeout(() => setCopied(false), 2000);
+
+        try {
+            const progressResponse = await userAPI.updateProgress(5);
+            updateUser({
+                progress: Math.max(user.progress, 6),
+                completedDays: progressResponse.data.completedDays,
+                currentDay: progressResponse.data.currentDay
+            });
+        } catch (error) {
+            console.error('Error updating progress:', error);
+        }
     };
 
     const handleCopyTag = (tag) => {
