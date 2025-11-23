@@ -17,63 +17,73 @@ const Profile = () => {
         <div className="profile-container">
             <PageHeader
                 title="Profil Saya"
-                subtitle="Maklumat akaun anda"
+                subtitle="Tetapan & Maklumat"
                 backPath="/dashboard"
             />
 
-            {/* Content */}
             <div className="profile-content">
-                {/* Avatar Section */}
-                <div className="avatar-section">
-                    <div className="avatar-circle">
+                {/* Profile Header Card */}
+                <div className="profile-header-card">
+                    <div className="profile-avatar">
                         {user?.username?.[0]?.toUpperCase() || 'U'}
                     </div>
-                    <h2 className="username">{user?.username}</h2>
-                    <p className="member-since">Ahli sejak 2025</p>
-                </div>
-
-                {/* Info Card */}
-                <div className="info-card">
-                    <h3 className="card-title">Maklumat Peribadi</h3>
-
-                    <div className="info-item">
-                        <div className="info-icon">👤</div>
-                        <div className="info-details">
-                            <p className="info-label">Nama Pengguna</p>
-                            <p className="info-value">{user?.username}</p>
-                        </div>
-                    </div>
-
-                    <div className="info-item">
-                        <div className="info-icon">📧</div>
-                        <div className="info-details">
-                            <p className="info-label">Emel</p>
-                            <p className="info-value">{user?.email}</p>
-                        </div>
-                    </div>
-
-                    <div className="info-item">
-                        <div className="info-icon">💼</div>
-                        <div className="info-details">
-                            <p className="info-label">Nama Bisnes</p>
-                            <p className="info-value">{user?.businessName || 'Belum ditetapkan'}</p>
-                        </div>
-                    </div>
-
-                    <div className="info-item">
-                        <div className="info-icon">🏷️</div>
-                        <div className="info-details">
-                            <p className="info-label">Kategori</p>
-                            <p className="info-value">{user?.niche || 'Belum ditetapkan'}</p>
+                    <div className="profile-identity">
+                        <h2 className="profile-name">{user?.username || 'Pengguna'}</h2>
+                        <p className="profile-email">{user?.email}</p>
+                        <div className="profile-badges">
+                            <span className="badge-pro">PRO MEMBER</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Logout Button */}
-                <button className="logout-button" onClick={handleLogout}>
-                    <span className="logout-icon">🚪</span>
-                    <span>Log Keluar</span>
+                {/* Stats Summary (Optional, adds visual interest) */}
+                <div className="profile-stats-row">
+                    <div className="stat-box">
+                        <span className="stat-value">{user?.completedDays?.length || 0}</span>
+                        <span className="stat-label">Hari Selesai</span>
+                    </div>
+                    <div className="stat-box">
+                        <span className="stat-value">6</span>
+                        <span className="stat-label">Jumlah Misi</span>
+                    </div>
+                </div>
+
+                {/* Details List */}
+                <div className="section-label">MAKLUMAT BISNES</div>
+                <div className="profile-menu-card">
+                    <div className="menu-item">
+                        <div className="menu-icon">💼</div>
+                        <div className="menu-content">
+                            <span className="menu-label">Nama Bisnes</span>
+                            <span className="menu-value">{user?.businessName || '-'}</span>
+                        </div>
+                    </div>
+                    <div className="menu-divider"></div>
+                    <div className="menu-item">
+                        <div className="menu-icon">🏷️</div>
+                        <div className="menu-content">
+                            <span className="menu-label">Kategori / Niche</span>
+                            <span className="menu-value">{user?.niche || 'General'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="section-label">AKSES</div>
+                <div className="profile-menu-card">
+                    <div className="menu-item">
+                        <div className="menu-icon">🔐</div>
+                        <div className="menu-content">
+                            <span className="menu-label">Tukar Kata Laluan</span>
+                            <span className="menu-arrow">›</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button className="action-logout-btn" onClick={handleLogout}>
+                    Log Keluar
                 </button>
+
+                <p className="version-text">Versi 1.0.0 • AramNiaga</p>
             </div>
         </div>
     );

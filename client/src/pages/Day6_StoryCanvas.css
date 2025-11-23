@@ -109,41 +109,6 @@
 /* Stickers */
 .sticker {
     position: absolute;
-    transform: translate(-50%, -50%);
-    background: transparent;
-    color: #1e293b;
-    user-select: none;
-    border: 2px solid transparent;
-    transition: border-color 0.2s;
-    z-index: 10;
-}
-
-.sticker:active {
-    cursor: grabbing;
-}
-
-/* Handles */
-.rotate-handle,
-.resize-handle {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    background: white;
-    border: 1px solid #cbd5e1;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    color: #64748b;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 20;
-}
-
-.rotate-handle {
-    top: -30px;
-    left: 50%;
     transform: translateX(-50%);
     cursor: alias;
 }

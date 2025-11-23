@@ -167,6 +167,70 @@ const Day6_StoryCanvas = () => {
         setActiveOperation(null);
     };
 
+    // --- Touch Handlers (Mobile Support) ---
+
+    const handleTouchStart = (e, id, operation) => {
+        e.stopPropagation();
+        // Don't prevent default here to allow scrolling if not hitting a target, 
+        // but for stickers we might want to.
+        setActiveOperation(operation);
+        setSelectedStickerId(id);
+        const touch = e.touches[0];
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+        setIsDragging(true);
+    };
+
+    const handleTouchMove = (e) => {
+        if (!isDragging || !selectedStickerId) return;
+        e.preventDefault(); // Prevent scrolling while dragging
+
+        const touch = e.touches[0];
+        const sticker = stickers.find(s => s.id === selectedStickerId);
+        if (!sticker) return;
+
+        const rect = canvasRef.current.getBoundingClientRect();
+
+        if (activeOperation === 'move') {
+            const deltaX = ((touch.clientX - dragStart.x) / rect.width) * 100;
+            const deltaY = ((touch.clientY - dragStart.y) / rect.height) * 100;
+
+            setStickers(stickers.map(s =>
+                s.id === selectedStickerId
+                    ? { ...s, x: s.x + deltaX, y: s.y + deltaY }
+                    : s
+            ));
+            setDragStart({ x: touch.clientX, y: touch.clientY });
+        } else if (activeOperation === 'rotate') {
+            const stickerEl = document.getElementById(`sticker-${selectedStickerId}`);
+            if (stickerEl) {
+                const stickerRect = stickerEl.getBoundingClientRect();
+                const centerX = stickerRect.left + stickerRect.width / 2;
+                const centerY = stickerRect.top + stickerRect.height / 2;
+
+                const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * (180 / Math.PI);
+                const rotation = angle + 90;
+
+                setStickers(stickers.map(s =>
+                    s.id === selectedStickerId ? { ...s, rotation } : s
+                ));
+            }
+        } else if (activeOperation === 'resize') {
+            const deltaY = dragStart.y - touch.clientY;
+            const newSize = Math.max(12, Math.min(72, sticker.fontSize + (deltaY * 0.5)));
+
+            setStickers(stickers.map(s =>
+                s.id === selectedStickerId ? { ...s, fontSize: newSize } : s
+            ));
+            setFontSize(newSize);
+            setDragStart({ x: touch.clientX, y: touch.clientY });
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        setActiveOperation(null);
+    };
+
     const handleEvaluate = async () => {
         if (!canvasRef.current) return;
 
@@ -234,6 +298,9 @@ const Day6_StoryCanvas = () => {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
         >
             <PageHeader
                 title="Hari 6: Story Canvas"
@@ -360,6 +427,7 @@ const Day6_StoryCanvas = () => {
                             key={sticker.id}
                             id={`sticker-${sticker.id}`}
                             onMouseDown={(e) => handleMouseDown(e, sticker.id, 'move')}
+                            onTouchStart={(e) => handleTouchStart(e, sticker.id, 'move')}
                             onClick={(e) => handleStickerClick(e, sticker.id)}
                             onDoubleClick={(e) => handleStickerDoubleClick(e, sticker.id)}
                             style={{
@@ -381,12 +449,14 @@ const Day6_StoryCanvas = () => {
                                     <div
                                         className="rotate-handle"
                                         onMouseDown={(e) => handleMouseDown(e, sticker.id, 'rotate')}
+                                        onTouchStart={(e) => handleTouchStart(e, sticker.id, 'rotate')}
                                     >
                                         ↻
                                     </div>
                                     <div
                                         className="resize-handle"
                                         onMouseDown={(e) => handleMouseDown(e, sticker.id, 'resize')}
+                                        onTouchStart={(e) => handleTouchStart(e, sticker.id, 'resize')}
                                     >
                                         ⤡
                                     </div>
@@ -410,42 +480,44 @@ const Day6_StoryCanvas = () => {
                         </>
                     )}
                 </button>
-            </div>
+            </div >
 
             {/* Evaluation Modal */}
-            {showEvaluation && evaluationResult && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h3 className="modal-title">Penilaian Coach AI</h3>
-                            <button className="close-btn" onClick={() => setShowEvaluation(false)}>
-                                <X size={24} />
+            {
+                showEvaluation && evaluationResult && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h3 className="modal-title">Penilaian Coach AI</h3>
+                                <button className="close-btn" onClick={() => setShowEvaluation(false)}>
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="grade-display">
+                                <div className="grade-circle">{evaluationResult.grade}</div>
+                                <p className="font-bold text-gray-700">Gred Design Anda</p>
+                            </div>
+
+                            <div className="feedback-section">
+                                <span className="feedback-label">Komen Coach:</span>
+                                <p className="feedback-text">{evaluationResult.feedback}</p>
+                            </div>
+
+                            <div className="feedback-section">
+                                <span className="feedback-label">💡 Tip Pro:</span>
+                                <p className="feedback-text">{evaluationResult.tips}</p>
+                            </div>
+
+                            <button className="download-button" onClick={handleDownload}>
+                                <Download size={20} />
+                                <span>Download Sekarang</span>
                             </button>
                         </div>
-
-                        <div className="grade-display">
-                            <div className="grade-circle">{evaluationResult.grade}</div>
-                            <p className="font-bold text-gray-700">Gred Design Anda</p>
-                        </div>
-
-                        <div className="feedback-section">
-                            <span className="feedback-label">Komen Coach:</span>
-                            <p className="feedback-text">{evaluationResult.feedback}</p>
-                        </div>
-
-                        <div className="feedback-section">
-                            <span className="feedback-label">💡 Tip Pro:</span>
-                            <p className="feedback-text">{evaluationResult.tips}</p>
-                        </div>
-
-                        <button className="download-button" onClick={handleDownload}>
-                            <Download size={20} />
-                            <span>Download Sekarang</span>
-                        </button>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
